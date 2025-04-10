@@ -36,9 +36,10 @@
 /*     compilat amb la llibreria 'curses':				     */
 /*									     */
 /*	   $ gcc -c winsuport.c -o winsuport.o			     	     */
+/*        gcc -c memoria.c -o memoria.o*/
 /*        gcc -c semafor.c -o semafor.o */
 /*        gcc -c winsuport2.c -o winsuport2.o */
-/*	   $ gcc tron1.c winsuport.o semafor.o -o tron1 -lcurses			     */
+/*	   $ gcc tron1.c winsuport.o memoria.o semafor.o -o tron1 -lcurses			     */
 /*	   $ ./tron0 variabilitat [retard]				     */
 /*									     */
 /*  Codis de retorn:						  	     */
@@ -57,7 +58,8 @@
 #include <sys/wait.h>     //new
 #include <time.h>
 #include "semafor.h"
-
+#include <string.h>
+#include "memoria.h"
 
 				/* definir estructures d'informacio */
 typedef struct {		/* per un tron (usuari o oponent) */
@@ -97,6 +99,9 @@ int n_opo[num_trons];        // nombre de posicions per a cada oponent
 FILE *f;
 int sem_tabler, sem_fixer;
 
+char *p_tauler;
+int id_tauler;
+
 /* funcio per esborrar totes les posicions anteriors, sigui de l'usuari o */
 /* de l'oponent */
 void esborrar_posicions(pos p_pos[], int n_pos)
@@ -105,7 +110,8 @@ void esborrar_posicions(pos p_pos[], int n_pos)
   
   for (i=n_pos-1; i>=0; i--)		/* de l'ultima cap a la primera */
   {
-    win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);	/* esborra una pos. */
+    win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
+    p_tauler[p_pos[i].f* n_col +p_pos[i].c] = ' ';	/* esborra una pos. */
     win_retard(10);		/* un petit retard per simular el joc real */
   }
 }
@@ -118,9 +124,10 @@ void inicialitza_joc(void)
   usu.f = (n_fil-1)/2;
   usu.c = (n_col)/4;		/* fixa posicio i direccio inicial usuari */
   usu.d = 3;
-    waitS(sem_tabler);
-  win_escricar(usu.f,usu.c,'0',INVERS);	/* escriu la primer posicio usuari */
-   signalS(sem_tabler);
+    //waitS(sem_tabler);
+  win_escricar(usu.f,usu.c,'0',INVERS);	
+  p_tauler[usu.f * n_col + usu.c] = 0;/* escriu la primer posicio usuari */
+   //signalS(sem_tabler);
   p_usu[n_usu].f = usu.f;		/* memoritza posicio inicial */
   p_usu[n_usu].c = usu.c;
   n_usu++;
@@ -131,17 +138,18 @@ void inicialitza_joc(void)
     opo[index].c = (n_col*3)/4;		
     opo[index].d = 1;
     
-    waitS(sem_tabler);
-    win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS);	/* escriu la primer posicio oponent */ 
-    signalS(sem_tabler);
+    //waitS(sem_tabler);
+      win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS);
+      p_tauler[opo[index].f * n_col +opo[index].c] = index + 1;	/* escriu la primer posicio oponent */ 
+    //signalS(sem_tabler);
     
     p_opo[index][n_opo[index]].f = opo[index].f;	
     p_opo[index][n_opo[index]].c = opo[index].c;
     n_opo[index]++;	
     
-    waitS(sem_fixer);
+    //waitS(sem_fixer);
     fprintf(f, "tron inizialitzat %d!\n", index);
-    signalS(sem_fixer);
+    //signalS(sem_fixer);
   }
 
   sprintf(strin,"Tecles: \'%c\', \'%c\', \'%c\', \'%c\', RETURN-> sortir\n",
@@ -164,7 +172,7 @@ int mou_oponent(int index)
 while (!fi1 && !fi2) {  
   seg.f = opo[index].f + df[opo[index].d]; /* calcular seguent posicio */
   seg.c = opo[index].c + dc[opo[index].d]; 
-  cars = win_quincar(seg.f,seg.c);	/* calcula caracter seguent posicio */
+  cars = p_tauler[opo[index].f * n_col + opo[index].c];	/* calcula caracter seguent posicio */
 
   if (cars != ' ')			/* si seguent posicio ocupada */
      canvi = 1;		/* anotar que s'ha de produir un canvi de direccio */
@@ -186,7 +194,7 @@ while (!fi1 && !fi2) {
         seg.f = opo[index].f + df[vk]; /* corregeix negatius */
         seg.c = opo[index].c + dc[vk]; /* calcular posicio en la nova dir.*/
         waitS(sem_tabler);
-        cars = win_quincar(seg.f, seg.c); /* calcula caracter seguent posicio */
+        cars = p_tauler[seg.f* n_col + seg.c]; // new
         signalS(sem_tabler);
 
       }
@@ -209,7 +217,8 @@ while (!fi1 && !fi2) {
       opo[index].f += df[opo[index].d];
       opo[index].c += dc[opo[index].d];
       waitS(sem_tabler);
-      win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS); // imprimeix número del tron //new
+        win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS); // imprimeix número del tron //new
+        p_tauler[opo[index].f * n_col +opo[index].c] = index + 1; 
       signalS(sem_tabler);
       waitS(sem_fixer);
       fprintf(f, "nova posicio del tron %d: %d, %d\n", index, opo[index].f, opo[index].c);
@@ -227,6 +236,7 @@ while (!fi1 && !fi2) {
       waitS(sem_fixer);
       fprintf(f, "colision del tron %d.\n", index);
       signalS(sem_fixer);
+
       fi2 = 1;   //new
       exit(0);
     }
@@ -259,18 +269,29 @@ void mou_usuari(void) {  // nou capçalera sense paràmetres //new
     // calc seguent posició
     seg.f = usu.f + df[usu.d];
     seg.c = usu.c + dc[usu.d];
-    c = win_quincar(seg.f, seg.c);
+    c = p_tauler[seg.f * n_col + seg.c];
+
+    // printf("usu:%d, %d", usu.f, usu.c);
+    // printf("seg:%d, %d", seg.f, seg.c);
+    // printf("Caràcter llegit: [%c] (ASCII: %d)\n", c, c);
 
     if (c == ' ') { //moviment
       usu.f = seg.f;
       usu.c = seg.c;
+      
+      waitS(sem_tabler);
       win_escricar(usu.f, usu.c, '0', INVERS);
+      p_tauler[usu.f* n_col + usu.c] = 0;
+      signalS(sem_tabler);
+
       p_usu[n_usu].f = usu.f;
       p_usu[n_usu].c = usu.c;
       n_usu++;
 
     }else{ // ha xocat
+      waitS(sem_tabler);
       esborrar_posicions(p_usu, n_usu);
+      signalS(sem_tabler);
       fi2 = 1;
     }
 
@@ -289,6 +310,7 @@ int main(int n_args, const char *ll_args[])
   int retwin;		/* variables locals */
   int pid;
   const char *log_file;
+
   srand(time(NULL));		/* inicialitza numeros aleatoris */
 
   if ((n_args != 2) && (n_args != 4))
@@ -349,6 +371,10 @@ int main(int n_args, const char *ll_args[])
 
   sem_tabler = ini_sem(1);
   sem_fixer = ini_sem(1);
+
+  id_tauler = ini_mem(n_fil*n_col*sizeof(char)); /* crear zona mem. compartida */
+  p_tauler = (char *)map_mem(id_tauler);
+  memset(p_tauler, ' ',n_fil*n_col);
 
   inicialitza_joc();
 
