@@ -172,7 +172,7 @@ int mou_oponent(int index)
 while (!fi1 && !fi2) {  
   seg.f = opo[index].f + df[opo[index].d]; /* calcular seguent posicio */
   seg.c = opo[index].c + dc[opo[index].d]; 
-  cars = p_tauler[opo[index].f * n_col + opo[index].c];	/* calcula caracter seguent posicio */
+  cars = p_tauler[seg.f * n_col + seg.c];	/* calcula caracter seguent posicio */
 
   if (cars != ' ')			/* si seguent posicio ocupada */
      canvi = 1;		/* anotar que s'ha de produir un canvi de direccio */
@@ -193,9 +193,9 @@ while (!fi1 && !fi2) {
 
         seg.f = opo[index].f + df[vk]; /* corregeix negatius */
         seg.c = opo[index].c + dc[vk]; /* calcular posicio en la nova dir.*/
-        waitS(sem_tabler);
+
+        //cars = win_quincar(seg.f,seg.c);
         cars = p_tauler[seg.f* n_col + seg.c]; // new
-        signalS(sem_tabler);
 
       }
       if (cars == ' ')
@@ -269,6 +269,7 @@ void mou_usuari(void) {  // nou capçalera sense paràmetres //new
     // calc seguent posició
     seg.f = usu.f + df[usu.d];
     seg.c = usu.c + dc[usu.d];
+    //c = win_quincar(seg.f,seg.c);
     c = p_tauler[seg.f * n_col + seg.c];
 
     // printf("usu:%d, %d", usu.f, usu.c);
@@ -395,5 +396,6 @@ int main(int n_args, const char *ll_args[])
   else { printf("Ha guanyat %s\n\n", fi2 ? "l'usuari":"l'ordinador"); }
   elim_sem(sem_fixer);
   elim_sem(sem_tabler);
+  elim_mem(id_tauler);
   return(0);
 }

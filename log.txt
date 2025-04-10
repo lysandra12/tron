@@ -2,7 +2,36 @@ tron inizialitzat 0!
 tron inizialitzat 1!
 tron inizialitzat 2!
 tron inizialitzat 3!
-colision del tron 2.
+nova posicio del tron 3: 5, 139
+nova posicio del tron 1: 9, 139
+nova posicio del tron 2: 6, 139
+nova posicio del tron 0: 13, 139
+nova posicio del tron 3: 5, 138
+nova posicio del tron 1: 9, 138
+nova posicio del tron 2: 6, 138
+nova posicio del tron 0: 13, 138
+nova posicio del tron 3: 5, 137
+nova posicio del tron 1: 9, 137
+nova posicio del tron 2: 6, 137
+nova posicio del tron 0: 13, 137
+nova posicio del tron 3: 5, 136
+nova posicio del tron 1: 9, 136
+nova posicio del tron 2: 6, 136
+nova posicio del tron 0: 13, 136
+nova posicio del tron 3: 6, 136
+nova posicio del tron 1: 10, 136
+nova posicio del tron 2: 7, 136
+nova posicio del tron 0: 14, 136
 colision del tron 3.
+nova posicio del tron 1: 10, 137
+nova posicio del tron 2: 7, 137
+nova posicio del tron 0: 14, 137
+nova posicio del tron 1: 11, 137
+nova posicio del tron 2: 8, 137
+nova posicio del tron 0: 15, 137
+nova posicio del tron 1: 12, 137
+colision del tron 2.
+nova posicio del tron 0: 16, 137
 colision del tron 1.
+nova posicio del tron 0: 43, 137
 colision del tron 0.
