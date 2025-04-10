@@ -91,8 +91,8 @@ tron opo[num_trons];    // suposem màxim 10 oponents
 pos *p_opo[num_trons];   // taules de posicions per a cada oponent
 int n_opo[num_trons];        // nombre de posicions per a cada oponent
 
-#define min_retard 100
-#define max_retard 300
+#define min_retard 500
+#define max_retard 1000
 
 FILE *f;
 int sem_tabler, sem_fixer;
@@ -149,73 +149,99 @@ void inicialitza_joc(void)
   win_escristr(strin);
 }
 
-void mou_oponent(int index) {  
-  char c;
+
+/* funcio per moure un oponent una posicio; retorna 1 si l'oponent xoca */
+/* contra alguna cosa, 0 altrament					*/
+int mou_oponent(int index)
+{
+  char cars;
   tron seg;
   int k, vk, nd, vd[3];
-  int varia = 1;
   int canvi = 0;
+  int retorn = 0;
   srand(time(NULL));		/* inicialitza numeros aleatoris */
+ 
+while (!fi1 && !fi2) {  
+  seg.f = opo[index].f + df[opo[index].d]; /* calcular seguent posicio */
+  seg.c = opo[index].c + dc[opo[index].d]; 
+  cars = win_quincar(seg.f,seg.c);	/* calcula caracter seguent posicio */
 
-  while (!fi1 && !fi2) {   
-    seg.f = opo[index].f + df[opo[index].d]; /* calcular seguent posicio */
-    seg.c = opo[index].c + dc[opo[index].d]; 
-    c = win_quincar(seg.f, seg.c);    /* calcula caracter seguent posicio */
+  if (cars != ' ')			/* si seguent posicio ocupada */
+     canvi = 1;		/* anotar que s'ha de produir un canvi de direccio */
+  else
+    if (varia > 0)	/* si hi ha variabilitat */
+    { k = rand() % 10;		/* prova un numero aleatori del 0 al 9 */
+      if (k < varia) canvi = 1;	/* possible canvi de direccio */
+    }
+  
+  if (canvi){		/* si s'ha de canviar de direccio */
+  
+    nd = 0;
+    for (k=-1; k<=1; k++)	/* provar direccio actual i dir. veines */
+    {
+      vk = (opo[index].d + k) % 4;		/* nova direccio */
+      if (vk < 0){
+        vk += 4;		/* corregeix negatius */
 
-    if (c != ' ') canvi = 1; /* si seguent posicio ocupada anotar que s'ha de produir un canvi de direccio*/
-    else if ((varia > 0) && (rand() % 10 < varia)) canvi = 1; /* si hi ha variabilitat possible canvi de direccio */
-
-    if (canvi) { /* si s'ha de canviar de direccio */
-      nd = 0;
-      for (k = -1; k <= 1; k++) { /* provar direccio actual i dir. veines */
-        vk = (opo[index].d + k + 4) % 4; /* nova direccio */
         seg.f = opo[index].f + df[vk]; /* corregeix negatius */
         seg.c = opo[index].c + dc[vk]; /* calcular posicio en la nova dir.*/
         waitS(sem_tabler);
-            c = win_quincar(seg.f, seg.c); /* calcula caracter seguent posicio */
+        cars = win_quincar(seg.f, seg.c); /* calcula caracter seguent posicio */
         signalS(sem_tabler);
 
-         if (c == ' ') vd[nd++] = vk; /* memoritza com a direccio possible */
       }
-      if (nd == 0) { 	/* si no pot continuar, */
-        waitS(sem_tabler);
-        esborrar_posicions(p_opo[index], n_opo[index]);
-        signalS(sem_tabler);
-
-        waitS(sem_fixer);
-          fprintf(f, "colision del tron %d.\n", index);
-        signalS(sem_fixer);
-         fi2 = 1;   //new
-        return;
-      }
-      else{
-        if (nd == 1)			/* si nomes pot en una direccio */
-  	      opo[index].d = vd[0];			/* li assigna aquesta */
-        else				/* altrament */
-    	    opo[index].d = vd[rand() % 4];	/* segueix una dir. aleatoria */
+      if (cars == ' ')
+      { vd[nd] = vk;			/* memoritza com a direccio possible */
+        nd++;				/* anota una direccio possible mes */
       }
     }
+    if (nd == 0){			/* si no pot continuar, */
+  	retorn = 1;		/* xoc: ha perdut l'oponent! */
+    } else { 
 
-    opo[index].f += df[opo[index].d];
-    opo[index].c += dc[opo[index].d];
-      waitS(sem_tabler);
-    win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS); // imprimeix número del tron //new
-    signalS(sem_tabler);
-    waitS(sem_fixer);
-    fprintf(f, "nova posicio del tron %d: %d, %d\n", index, opo[index].f, opo[index].c);
-    signalS(sem_fixer);
-    p_opo[index][n_opo[index]].f = opo[index].f;
-    p_opo[index][n_opo[index]].c = opo[index].c;
-    n_opo[index]++;
+      if (nd == 1) opo[index].d = vd[0];/* si nomes pot en una direccio */
+      else opo[index].d = vd[rand() % 4];	/* segueix una dir. aleatoria */
 
-    win_retard(rand() % (max_retard - min_retard + 1) + min_retard);
+    }
   }
+
+    if (retorn==0){
+      opo[index].f += df[opo[index].d];
+      opo[index].c += dc[opo[index].d];
+      waitS(sem_tabler);
+      win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS); // imprimeix número del tron //new
+      signalS(sem_tabler);
+      waitS(sem_fixer);
+      fprintf(f, "nova posicio del tron %d: %d, %d\n", index, opo[index].f, opo[index].c);
+      signalS(sem_fixer);
+      p_opo[index][n_opo[index]].f = opo[index].f;
+      p_opo[index][n_opo[index]].c = opo[index].c;
+      n_opo[index]++;
+      
+      win_retard(rand() % ((max_retard - min_retard + 1) + min_retard));
+    }else {
+      waitS(sem_tabler);
+      esborrar_posicions(p_opo[index], n_opo[index]);
+      signalS(sem_tabler);
+
+      waitS(sem_fixer);
+      fprintf(f, "colision del tron %d.\n", index);
+      signalS(sem_fixer);
+      fi2 = 1;   //new
+      exit(0);
+    }
+
+  }
+
+  exit(0);
 }
 
 void mou_usuari(void) {  // nou capçalera sense paràmetres //new
+  
   int tec;
   tron seg;
   char c;
+  int retorn =0;
 
   while (!fi1 && !fi2) {   // bucle independent //new
 
@@ -234,23 +260,21 @@ void mou_usuari(void) {  // nou capçalera sense paràmetres //new
     seg.f = usu.f + df[usu.d];
     seg.c = usu.c + dc[usu.d];
     c = win_quincar(seg.f, seg.c);
-    
-    // printf("usu:%d, %d", usu.f, usu.c);
-    // printf("seg:%d, %d", seg.f, seg.c);
-    // printf("Caràcter llegit: [%c] (ASCII: %d)\n", c, c);
 
-    if (c != ' ') { // ha xocat
+    if (c == ' ') { //moviment
+      usu.f = seg.f;
+      usu.c = seg.c;
+      win_escricar(usu.f, usu.c, '0', INVERS);
+      p_usu[n_usu].f = usu.f;
+      p_usu[n_usu].c = usu.c;
+      n_usu++;
+
+    }else{ // ha xocat
       esborrar_posicions(p_usu, n_usu);
       fi2 = 1;
     }
 
-    //moviment 
-    usu.f = seg.f;
-    usu.c = seg.c;
-    win_escricar(usu.f, usu.c, '0', INVERS);
-    p_usu[n_usu].f = usu.f;
-    p_usu[n_usu].c = usu.c;
-    n_usu++;
+
 
     win_retard(retard);
   }
