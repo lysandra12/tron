@@ -292,7 +292,13 @@ void mou_usuari(struct EstatJoc* joc) {  // nou capçalera sense paràmetres //n
 
     // direcció moviment
     if (tec != 0) {
-      if (tec == TEC_RETURN) exit(-1);
+      if (tec == TEC_RETURN){
+        waitS(sem_tauler);
+        esborrar_posicions(p_usu, n_usu);
+        signalS(sem_tauler);
+        joc->fi_usu=-1;
+        exit(0);
+      }
       else if ((tec == TEC_DRETA) && (usu.d != 1)) usu.d = 3;
       else if ((tec == TEC_ESQUER) && (usu.d != 3)) usu.d = 1;
       else if ((tec == TEC_AVALL) && (usu.d != 0)) usu.d = 2;
