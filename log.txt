@@ -2,36 +2,199 @@ tron inizialitzat 0!
 tron inizialitzat 1!
 tron inizialitzat 2!
 tron inizialitzat 3!
-nova posicio del tron 3: 5, 139
-nova posicio del tron 1: 9, 139
-nova posicio del tron 2: 6, 139
-nova posicio del tron 0: 13, 139
-nova posicio del tron 3: 5, 138
-nova posicio del tron 1: 9, 138
-nova posicio del tron 2: 6, 138
-nova posicio del tron 0: 13, 138
-nova posicio del tron 3: 5, 137
-nova posicio del tron 1: 9, 137
-nova posicio del tron 2: 6, 137
-nova posicio del tron 0: 13, 137
-nova posicio del tron 3: 5, 136
-nova posicio del tron 1: 9, 136
-nova posicio del tron 2: 6, 136
-nova posicio del tron 0: 13, 136
-nova posicio del tron 3: 6, 136
-nova posicio del tron 1: 10, 136
-nova posicio del tron 2: 7, 136
-nova posicio del tron 0: 14, 136
-colision del tron 3.
-nova posicio del tron 1: 10, 137
-nova posicio del tron 2: 7, 137
-nova posicio del tron 0: 14, 137
-nova posicio del tron 1: 11, 137
-nova posicio del tron 2: 8, 137
-nova posicio del tron 0: 15, 137
-nova posicio del tron 1: 12, 137
-colision del tron 2.
-nova posicio del tron 0: 16, 137
-colision del tron 1.
-nova posicio del tron 0: 43, 137
-colision del tron 0.
+tron 3: 4-139
+tron 2: 6-139
+tron 0: 12-139
+tron 1: 8-139
+tron 3: 4-138
+tron 2: 6-138
+tron 0: 12-138
+tron 1: 8-138
+tron 3: 4-137
+tron 3: 4-136
+tron 0: 12-137
+tron 2: 6-137
+tron 1: 8-137
+tron 2: 6-136
+tron 3: 4-135
+tron 1: 8-136
+tron 2: 6-135
+tron 0: 12-136
+tron 1: 8-135
+tron 1: 9-135
+tron 3: 4-134
+tron 1: 9-136
+tron 1: 9-137
+tron 2: 5-135
+tron 0: 11-136
+tron 1: 9-138
+tron 2: 5-136
+tron 0: 11-137
+tron 3: 4-133
+tron 1: 9-139
+tron 0: 11-138
+tron 1: 9-140
+tron 3: 4-132
+tron 2: 4-136
+tron 1: 10-140
+tron 1: 10-139
+tron 2: 4-137
+tron 3: 4-131
+tron 1: 11-139
+tron 0: 11-139
+tron 2: 5-137
+tron 0: 10-139
+tron 1: 11-138
+tron 3: 4-130
+tron 2: 5-138
+tron 3: 4-129
+tron 1: 10-138
+tron 1: 10-137
+tron 0: 9-139
+tron 1: 10-136
+tron 2: 5-139
+tron 3: 5-129
+tron 1: 10-135
+tron 3: 6-129
+tron 0: 9-140
+tron 3: 6-128
+tron 2: 4-139
+tron 2: 4-138
+tron 2: 3-138
+tron 1: 11-135
+tron 0: 10-140
+tron 2: 3-139
+tron 2: 2-139
+tron 3: 6-127
+tron 0: 10-141
+tron 3: 7-127
+tron 1: 12-135
+tron 2: 2-140
+tron 1: 12-134
+tron 3: 7-128
+tron 2: 2-141
+tron 1: 11-134
+tron 0: 11-141
+tron 2: 2-142
+tron 0: 11-140
+tron 3: 7-129
+tron 1: 10-134
+tron 2: 1-142
+tron 3: 8-129
+tron 1: 9-134
+tron 3: 8-128
+tron 2: 1-141
+tron 0 ha xocat
+tron 1: 9-133
+tron 1: 8-133
+tron 3: 9-128
+tron 1: 7-133
+tron 2: 1-140
+tron 3: 9-127
+tron 1: 7-132
+tron 3: 10-127
+tron 2: 1-139
+tron 3: 10-128
+tron 1: 8-132
+tron 2: 1-138
+tron 2: 1-137
+tron 1: 9-132
+tron 3: 10-129
+tron 2: 1-136
+tron 1: 10-132
+tron 3: 9-129
+tron 2: 2-136
+tron 1: 10-133
+tron 1: 11-133
+tron 1: 12-133
+tron 1: 13-133
+tron 3: 9-130
+tron 3: 8-130
+tron 2: 2-135
+tron 1: 13-134
+tron 1: 14-134
+tron 2: 3-135
+tron 3: 8-131
+tron 2: 3-134
+tron 3: 9-131
+tron 1: 14-135
+tron 2: 2-134
+tron 1: 14-136
+tron 2: 2-133
+tron 1: 14-137
+tron 3: 10-131
+tron 2: 3-133
+tron 3: 10-132
+tron 1: 15-137
+tron 3: 10-133
+tron 2: 3-132
+tron 1: 16-137
+tron 1: 17-137
+tron 1: 17-136
+tron 1: 17-135
+tron 3: 11-133
+tron 2: 2-132
+tron 1: 16-135
+tron 3: 11-134
+tron 2: 2-131
+tron 2: 3-131
+tron 3: 11-135
+tron 1: 15-135
+tron 2: 4-131
+tron 2: 4-130
+tron 3: 11-136
+tron 3: 10-136
+tron 1: 15-136
+tron 2: 5-130
+tron 3: 10-137
+tron 2: 5-129
+tron 3: 11-137
+tron 3: 12-137
+tron 2: 5-128
+tron 1: 16-136
+tron 3: 12-136
+tron 2: 4-128
+tron 2: 3-128
+tron 3: 12-135
+tron 3: 12-134
+tron 2: 2-128
+tron 2: 2-129
+tron 3: 13-134
+tron 2: 3-129
+tron 3: 13-135
+tron 1 ha xocat
+tron 3: 14-135
+tron 2: 4-129
+tron 3: 14-136
+tron 3: 13-136
+tron 3: 13-137
+tron 2 ha xocat
+tron 3: 13-138
+tron 3: 12-138
+tron 3: 11-138
+tron 3: 10-138
+tron 3: 10-139
+tron 3: 11-139
+tron 3: 11-140
+tron 3: 10-140
+tron 3: 9-140
+tron 3: 9-139
+tron 3: 9-138
+tron 3: 9-137
+tron 3: 9-136
+tron 3: 9-135
+tron 3: 8-135
+tron 3: 7-135
+tron 3: 6-135
+tron 3: 6-134
+tron 3: 7-134
+tron 3: 8-134
+tron 3: 8-133
+tron 3: 8-132
+tron 3: 9-132
+tron 3: 9-133
+tron 3: 9-134
+tron 3: 10-134
+tron 3: 10-135
+tron 3 ha xocat
+win_fi
