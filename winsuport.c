@@ -108,7 +108,7 @@ char win_quincar(int f, int c)
   { wc = mvwinch(win,f,c);		/* captura caracter */
     result = wc & A_CHARTEXT;		/* elimina atributs */
     if ((result < ' ') || (result > '~')) /* filtra valors fora del rang */
-	result = ' ';	/* retorna blanc si no es un caracter ASCII */
+	  result = ' ';	/* retorna blanc si no es un caracter ASCII */
   }
   return(result);
 }
