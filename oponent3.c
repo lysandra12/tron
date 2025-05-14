@@ -2,9 +2,6 @@
 
 int sem_estat_joc, sem_fitxer, sem_tauler;
 
-/* funcio per moure un oponent una posicio; retorna 1 si l'oponent xoca */
-/* contra alguna cosa, 0 altrament					*/
-
 void esborrar_posicions(pos p_pos[], int n_pos)
 {
   int i;
@@ -12,8 +9,8 @@ void esborrar_posicions(pos p_pos[], int n_pos)
   for (i=n_pos-1; i>=0; i--)		/* de l'ultima cap a la primera */
   {
     waitS(sem_tauler);
-    win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
-    win_update();
+      win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
+      win_update();
     signalS(sem_tauler);
     win_retard(10);		/* un petit retard per simular el joc real */
   }
@@ -21,6 +18,7 @@ void esborrar_posicions(pos p_pos[], int n_pos)
 
 int main(int n_args, const char *ll_args[]){
 
+  // agafar params
   int id_estat_joc = atoi(ll_args[1]);
   int index = atoi(ll_args[2]);
   int id_win = atoi(ll_args[3]);
@@ -31,20 +29,17 @@ int main(int n_args, const char *ll_args[]){
   int varia = atoi(ll_args[7]);
   int max_retard = atoi(ll_args[8]);
   int min_retard = atoi(ll_args[9]);
-   sem_estat_joc = atoi(ll_args[10]);
-   sem_fitxer = atoi(ll_args[11]);
-   sem_tauler = atoi(ll_args[12]);
+  sem_estat_joc = atoi(ll_args[10]);
+  sem_fitxer = atoi(ll_args[11]);
+  sem_tauler = atoi(ll_args[12]);
 
-  FILE *f = fopen(log_file, "w");  
+  FILE *f = fopen(log_file, "a");  
 
- struct EstatJoc* joc = (struct EstatJoc*) map_mem(id_estat_joc);
-/*char *p_sem_tauler = map_mem(id_sem_estat_joc);
-  char *p_sem_fitxer = map_mem(id_sem_fitxer);
-  char *p_sem_estat_joc = map_mem(id_sem_tauler);
-*/
-  
-
+  // mapejar memoria
+  struct EstatJoc* joc = (struct EstatJoc*) map_mem(id_estat_joc);
   void *p_win = map_mem(id_win);
+
+  // setejar finestra
   win_set(p_win, n_fil, n_col); 
 
   char cars;
@@ -52,28 +47,43 @@ int main(int n_args, const char *ll_args[]){
   int k, vk, nd, vd[3];
   int canvi = 0;
   int retorn = 0;
-  tron opo;    // suposem màxim 10 oponents
-  pos *p_opo;   // taules de posicions per a cada oponent
-  int n_opo;        // nombre de posicions per a cada oponent
+  tron opo;    
+  pos *p_opo;   // taula de posicions per a cada oponent
+  int n_opo = 0;    // nombre de posicions per a cada oponent
   srand(getpid());		/* inicialitza numeros aleatoris */
- 
 
-    //inicializar tron
-    p_opo = (pos *) calloc(n_fil * n_col / 2, sizeof(pos));
-    opo.f = (n_fil/(index+2)) ;
-    opo.c = (n_col*3)/4;		
-    opo.d = 1;
-    
-    win_escricar(opo.f, opo.c, '1' + index, INVERS);
-    
-    p_opo[n_opo].f = opo.f;	
-    p_opo[n_opo].c = opo.c;
-    n_opo++;
+  // reservar memoria
+  p_opo = calloc(n_fil*n_col/2, sizeof(pos));	
+  if (!p_opo)	/* si no hi ha prou memoria per als vectors de pos. */
+  { 
+    win_fi();				/* tanca les curses */
+    if (p_opo) free(p_opo);
+    /* allibera el que hagi pogut obtenir */
+    fprintf(stderr,"Error en alocatacion de memoria dinamica.\n");
+    exit(3);
+  }
 
-    fprintf(f, "tron inizialitzat %d!\n", index);
+  //inicializar tron
+  opo.f = (n_fil/(index+2)) ;
+  opo.c = (n_col*3)/4;		
+  opo.d = 1;
   
+  waitS(sem_tauler);
+    win_escricar(opo.f, opo.c, '1' + index, INVERS);
     win_update();
+  signalS(sem_tauler);
+  
+  p_opo[n_opo].f = opo.f;	// guardar posicio
+  p_opo[n_opo].c = opo.c;
+  n_opo++;
 
+  waitS(sem_fitxer);
+    fprintf(f, "tron inizialitzat %d!\n", index);
+    fflush(f);
+  signalS(sem_fitxer);
+
+
+// logica principal tron
 while (joc->fi_usu==0 ) {  
   seg.f = opo.f + df[opo.d]; /* calcular seguent posicio */
   seg.c = opo.c + dc[opo.d]; 
@@ -134,6 +144,7 @@ while (joc->fi_usu==0 ) {
 
       waitS(sem_fitxer);  // log
         fprintf(f, "tron %d: %d-%d\n", index, opo.f, opo.c);
+        fflush(f);
       signalS(sem_fitxer);
 
       // actualitzar posició
@@ -165,4 +176,3 @@ while (joc->fi_usu==0 ) {
   exit(0);
 
 }
-

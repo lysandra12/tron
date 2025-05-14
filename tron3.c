@@ -1,6 +1,6 @@
 /*****************************************************************************/
 /*									     */
-/*				     tron2.c				     */
+/*				     tron3.c				     */
 /*									     */
 /*  Programa inicial d'exemple per a les practiques 2 de FSO   	             */
 /*     Es tracta del joc del tron: sobre un camp de joc rectangular, es      */
@@ -38,8 +38,8 @@
 /*	   $ gcc -c winsuport2.c -o winsuport.o			     	     */
 /*     $ gcc -c memoria.c -o memoria.o*/
 /*     $ gcc -c semafor.c -o semafor.o */
-/*	   $ gcc tron2.c winsuport.o memoria.o semafor.o -o tron2 -lcurses	     */
-/*	   $ ./tron2 num_opo variabilitat fitxer_log [min_retard max_retard]		 */
+/*	   $ gcc tron3.c winsuport.o memoria.o semafor.o -o tron3 -lcurses	     */
+/*	   $ ./tron3 num_opo variabilitat fitxer_log [min_retard max_retard]		 */
 /*									                                                         */
 /*  Codis de retorn:						  	     */
 /*     El programa retorna algun dels seguents codis al SO:		     */
@@ -50,6 +50,7 @@
 /*									     */
 /*****************************************************************************/
 #include "tron3.h"
+
 /* variables globals */
 
 int n_fil, n_col;		/* dimensions del camp de joc */
@@ -58,16 +59,11 @@ int varia;		/* valor de variabilitat dels oponents [0..9] */
 int max_retard, min_retard;		/* valor del retard de moviment, en mil.lisegons */
 int num_oponents;
 
-tron usu;   	   		/* informacio de l'usuari */
+tron usu;   	  /* informacio de l'usuari */
 pos *p_usu;			/* taula de posicions que van recorrent */
 int n_usu = 0;  /* numero d'entrades en les taules de pos. */
 
 int sem_tauler, sem_fitxer, sem_estat_joc;
-
-//#define max_trons 10
-//tron opo[max_trons];    // suposem màxim 10 oponents
-//pos *p_opo[max_trons];   // taules de posicions per a cada oponent
-//int n_opo[max_trons];        // nombre de posicions per a cada oponent
 
 FILE *f;
 
@@ -80,8 +76,8 @@ void esborrar_posicions(pos p_pos[], int n_pos)
   for (i=n_pos-1; i>=0; i--)		/* de l'ultima cap a la primera */
   {
     waitS(sem_tauler);
-    win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
-    win_update();
+      win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
+      win_update();
     signalS(sem_tauler);
     win_retard(10);		/* un petit retard per simular el joc real */
   }
@@ -100,7 +96,10 @@ void inicialitza_joc(struct EstatJoc* joc)
   usu.c = (n_col)/4;		/* fixa posicio i direccio inicial usuari */
   usu.d = 3;
 
-  win_escricar(usu.f,usu.c,'0',INVERS);	
+  waitS(sem_tauler);
+    win_escricar(usu.f,usu.c,'0',INVERS);	
+  signalS(sem_tauler);
+
   p_usu[n_usu].f = usu.f;		/* memoritza posicio inicial */
   p_usu[n_usu].c = usu.c;
   n_usu++;
@@ -111,9 +110,6 @@ void inicialitza_joc(struct EstatJoc* joc)
   win_escristr(strin);
   win_update();
 }
-
-
-
 
 void mou_usuari(struct EstatJoc* joc) {
   
@@ -214,7 +210,7 @@ int main(int n_args, const char *ll_args[])
   	if (min_retard < 10) min_retard = 10;	/* verificar limits */
   	if (max_retard > 1000) min_retard = 1000;
   }
-  else min_retard = 100; max_retard = 400;		/* altrament, fixar retard per defecte */
+  else min_retard = 150; max_retard = 500;		/* altrament, fixar retard per defecte */
 
   printf("Joc del Tron\n\tTecles: \'%c\', \'%c\', \'%c\', \'%c\', RETURN-> sortir\n",
 		TEC_AMUNT, TEC_AVALL, TEC_DRETA, TEC_ESQUER);
@@ -247,49 +243,20 @@ int main(int n_args, const char *ll_args[])
     fprintf(stderr,"Error en alocatacion de memoria dinamica.\n");
     exit(3);
   }
-/*//oponents
-  for (int i = 0; i < num_oponents; i++) {
-    p_opo[i] = (pos *) calloc(n_fil * n_col / 2, sizeof(pos));
-    n_opo[i] = 0; 
-
-    if (!p_opo[i]){
-      for (i; i >= 0; i--){
-        free(p_opo[i]);
-      }
-      fprintf(stderr,"Error en alocatacion de memoria dinamica.\n");
-      exit(3);
-    }
-  }
-*/
-   // semafors
-/*int id_sem_tauler, id_sem_fitxer, id_sem_estat_joc;
-
-  id_sem_estat_joc = ini_mem(sizeof(int));
-  id_sem_fitxer = ini_mem(sizeof(int));
-  id_sem_tauler = ini_mem(sizeof(int));
-
-*/
   
   sem_tauler = ini_sem(1);
   sem_fitxer = ini_sem(1);
   sem_estat_joc = ini_sem(1);
-/* void *p_sem_tauler = (int *)map_mem(id_sem_estat_joc);
-   void *p_sem_fitxer = (int *)map_mem(id_sem_fitxer);
-   void *p_sem_estat_joc = (int *)map_mem(id_sem_tauler);
-*/
   
-
   // crear zona mem. compartida 
   int id_estat_joc = ini_mem(sizeof(struct EstatJoc));
   int id_win = ini_mem(retwin);
 
-
-  void *p_win = map_mem(id_win); // puntero m.c. info ventana
-  win_set(p_win, n_fil, n_col); // asignar pantalla a tablero
-
   // mapear memoria compartida
   struct EstatJoc* joc = (struct EstatJoc*) map_mem(id_estat_joc);
+  void *p_win = map_mem(id_win); // puntero m.c. info ventana
 
+  win_set(p_win, n_fil, n_col); // asignar pantalla a tablero
   inicialitza_joc(joc);
   
   // crear processos
@@ -307,23 +274,19 @@ int main(int n_args, const char *ll_args[])
   sprintf(a10,"%i",sem_fitxer);
   sprintf(a11,"%i",sem_tauler);
 
+  // processos oponents
   for (int i = 0; i < num_oponents; i++){
-     // processos oponents
     sprintf(a1,"%i",i);
-    fprintf(f, "tron %d\n", i);
   	if(fork() == 0) execlp("./oponent3", "oponent3", a0, a1, a2, log_file, a4, a5, a6, a7, a8, a9, a10, a11, (char *)0);
   }   
+
   do			/********** bucle principal del joc **********/
   {
-    usleep(1000); //100 milisegundos
-    win_update();
+    usleep(100000); //100 milisegundos
+    // win_update(); 
   } while (joc->fi_usu==0 && joc->opo_vius>0);
 
   win_fi();
-
-  // esperar a que acabin els processos
-  for (int i = 0; joc->opo_vius + (i < joc->fi_usu!=0 ? 1:0); i++) 
-    wait(NULL);
 
   // RESULTATS
   if (joc->fi_usu==-1) printf("S'ha aturat el joc amb tecla RETURN!\n\n");
@@ -337,9 +300,6 @@ int main(int n_args, const char *ll_args[])
   elim_mem(id_estat_joc);
   elim_mem(id_win);
   free(p_usu);
-  /*
-  for (int i = 0; i < num_oponents; i++) 
-    free(p_opo[i]);
- */
+
   return(0);
 }

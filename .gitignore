@@ -1,0 +1,32 @@
+# Archivos de compilación
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+
+# Archivos de depuración
+*.dSYM/
+*.stackdump
+*.core
+
+# Archivos de backup y temporales
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Archivos generados por editores
+.vscode/
+.idea/
+*.log
+*.txt
+
+# Binarios y carpetas de build
+/build/
+bin/
+obj/
