@@ -49,10 +49,35 @@
 /*	3  ==>  no hi ha prou memoria per crear les estructures dinamiques   */
 /*									     */
 /*****************************************************************************/
-#include "tron3.h"
+
+#include <stdio.h>	
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>     
+#include <time.h>
+#include <string.h>
+#include "winsuport2.h"		
+#include "semafor.h"
+#include "memoria.h"
+
+/* definir estructures d'informacio */
+typedef struct {		/* per un tron (usuari o oponent) */
+	int f;				/* posicio actual: fila */
+	int c;				/* posicio actual: columna */
+	int d;				/* direccio actual: [0..3] */
+} tron;
+
+typedef struct {		/* per una entrada de la taula de posicio */
+	int f;
+	int c;
+} pos;
+
 /* variables globals */
 
 int n_fil, n_col;		/* dimensions del camp de joc */
+
+int df[] = {-1, 0, 1, 0};	/* moviments de les 4 direccions possibles */
+int dc[] = {0, -1, 0, 1};	/* dalt, esquerra, baix, dreta */
 
 int varia;		/* valor de variabilitat dels oponents [0..9] */
 int max_retard, min_retard;		/* valor del retard de moviment, en mil.lisegons */
@@ -62,14 +87,19 @@ tron usu;   	   		/* informacio de l'usuari */
 pos *p_usu;			/* taula de posicions que van recorrent */
 int n_usu = 0;  /* numero d'entrades en les taules de pos. */
 
-int sem_tauler, sem_fitxer, sem_estat_joc;
-
-//#define max_trons 10
-//tron opo[max_trons];    // suposem màxim 10 oponents
-//pos *p_opo[max_trons];   // taules de posicions per a cada oponent
-//int n_opo[max_trons];        // nombre de posicions per a cada oponent
+#define max_trons 10
+tron opo[max_trons];    // suposem màxim 10 oponents
+pos *p_opo[max_trons];   // taules de posicions per a cada oponent
+int n_opo[max_trons];        // nombre de posicions per a cada oponent
 
 FILE *f;
+int sem_tauler , sem_fitxer, sem_estat_joc; // id's semafors
+
+// info rellevant sobre el estat
+struct EstatJoc {
+    int fi_usu;   // final usuari?
+    int opo_vius; // num oponents vius
+};
 
 /* funcio per esborrar totes les posicions anteriors, sigui de l'usuari o */
 /* de l'oponent */
@@ -104,6 +134,21 @@ void inicialitza_joc(struct EstatJoc* joc)
   p_usu[n_usu].f = usu.f;		/* memoritza posicio inicial */
   p_usu[n_usu].c = usu.c;
   n_usu++;
+
+  // Inicialitza tots els oponents disponibles 
+  for (int index = 0; index < num_oponents; index++) { 
+    opo[index].f = (n_fil/(index+2)) ;
+    opo[index].c = (n_col*3)/4;		
+    opo[index].d = 1;
+    
+    win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS);
+    
+    p_opo[index][n_opo[index]].f = opo[index].f;	
+    p_opo[index][n_opo[index]].c = opo[index].c;
+    n_opo[index]++;	
+
+    fprintf(f, "tron inizialitzat %d!\n", index);
+  }
 
   // info
   sprintf(strin,"Tecles: \'%c\', \'%c\', \'%c\', \'%c\', RETURN-> sortir\n",
@@ -181,11 +226,114 @@ void mou_usuari(struct EstatJoc* joc) {
   exit(0);
 }
 
+/* funcio per moure un oponent una posicio; retorna 1 si l'oponent xoca */
+/* contra alguna cosa, 0 altrament					*/
+int mou_oponent(int index, struct EstatJoc* joc)
+{
+  char cars;
+  tron seg;
+  int k, vk, nd, vd[3];
+  int canvi = 0;
+  int retorn = 0;
+  srand(getpid());		/* inicialitza numeros aleatoris */
+ 
+while (joc->fi_usu==0 ) {  
+  seg.f = opo[index].f + df[opo[index].d]; /* calcular seguent posicio */
+  seg.c = opo[index].c + dc[opo[index].d]; 
+
+  waitS(sem_tauler);
+    cars = win_quincar(seg.f,seg.c);	/* calcula caracter seguent posicio */
+  signalS(sem_tauler);
+
+  if (cars != ' ')			/* si seguent posicio ocupada */
+     canvi = 1;		/* anotar que s'ha de produir un canvi de direccio */
+  else
+    if (varia > 0)	/* si hi ha variabilitat */
+    { k = rand() % 10;		/* prova un numero aleatori del 0 al 9 */
+      if (k < varia) canvi = 1;	/* possible canvi de direccio */
+    }
+  
+  if (canvi){		/* si s'ha de canviar de direccio */
+  
+    nd = 0;
+    for (k=-1; k<=1; k++)	/* provar direccio actual i dir. veines */
+    {
+      vk = (opo[index].d + k) % 4;		/* nova direccio */
+      if (vk < 0){
+        vk += 4;		/* corregeix negatius */
+      }
+        seg.f = opo[index].f + df[vk]; /* corregeix negatius */
+        seg.c = opo[index].c + dc[vk]; /* calcular posicio en la nova dir.*/
+        
+        waitS(sem_tauler);  // consultar tauler
+          cars = win_quincar(seg.f,seg.c);	/* calcula caracter seguent posicio */
+        signalS(sem_tauler);
+
+      
+      if (cars == ' ')
+      { vd[nd] = vk;			/* memoritza com a direccio possible */
+        nd++;				/* anota una direccio possible mes */
+      }
+    }
+    if (nd == 0){			/* si no pot continuar, */
+  	retorn = 1;		/* xoc: ha perdut l'oponent! */
+    } else { 
+
+      if (nd == 1) opo[index].d = vd[0];/* si nomes pot en una direccio */
+      else opo[index].d = vd[rand() % nd];	/* segueix una dir. aleatoria */
+
+    }
+  }
+
+    if (retorn==0){
+      // posicio actual
+      opo[index].f += df[opo[index].d]; 
+      opo[index].c += dc[opo[index].d];
+
+      waitS(sem_tauler); // escriure tauler
+        win_escricar(opo[index].f, opo[index].c, '1' + index, INVERS);
+        win_update();
+      signalS(sem_tauler);
+
+      waitS(sem_fitxer);  // log
+        fprintf(f, "tron %d: %d-%d\n", index, opo[index].f, opo[index].c);
+      signalS(sem_fitxer);
+
+      // actualitzar posició
+      p_opo[index][n_opo[index]].f = opo[index].f;
+      p_opo[index][n_opo[index]].c = opo[index].c;
+      n_opo[index]++;
+      
+      win_retard(rand() % ((max_retard - min_retard + 1) + min_retard));
+    }else {
+
+      esborrar_posicions(p_opo[index], n_opo[index]);
+
+      waitS(sem_fitxer); // log
+        fprintf(f, "tron %d ha xocat\n", index);
+      signalS(sem_fitxer);
+
+      waitS(sem_estat_joc); // actualitzar estat
+        joc->opo_vius -= 1;
+      signalS(sem_estat_joc);
+
+      exit(0);
+    }
+
+  }
+  waitS(sem_estat_joc);
+    joc->opo_vius -= 1;
+  signalS(sem_estat_joc);
+
+  exit(0);
+
+}
+
 int main(int n_args, const char *ll_args[])
 {
   int retwin;		/* variables locals */
   const char *log_file;
-  char a0[50], a1[50], a2[50],a4[50],a5[50], a6[50], a7[50], a8[50], a9[50], a10[50], a11[50];
+
   srand(time(NULL));		/* inicialitza numeros aleatoris */
 
   if ((n_args != 4) && (n_args != 6))
@@ -247,7 +395,8 @@ int main(int n_args, const char *ll_args[])
     fprintf(stderr,"Error en alocatacion de memoria dinamica.\n");
     exit(3);
   }
-/*//oponents
+
+  //oponents
   for (int i = 0; i < num_oponents; i++) {
     p_opo[i] = (pos *) calloc(n_fil * n_col / 2, sizeof(pos));
     n_opo[i] = 0; 
@@ -260,29 +409,15 @@ int main(int n_args, const char *ll_args[])
       exit(3);
     }
   }
-*/
-   // semafors
-/*int id_sem_tauler, id_sem_fitxer, id_sem_estat_joc;
 
-  id_sem_estat_joc = ini_mem(sizeof(int));
-  id_sem_fitxer = ini_mem(sizeof(int));
-  id_sem_tauler = ini_mem(sizeof(int));
-
-*/
-  
+  // semafors
   sem_tauler = ini_sem(1);
   sem_fitxer = ini_sem(1);
   sem_estat_joc = ini_sem(1);
-/* void *p_sem_tauler = (int *)map_mem(id_sem_estat_joc);
-   void *p_sem_fitxer = (int *)map_mem(id_sem_fitxer);
-   void *p_sem_estat_joc = (int *)map_mem(id_sem_tauler);
-*/
-  
 
   // crear zona mem. compartida 
   int id_estat_joc = ini_mem(sizeof(struct EstatJoc));
   int id_win = ini_mem(retwin);
-
 
   void *p_win = map_mem(id_win); // puntero m.c. info ventana
   win_set(p_win, n_fil, n_col); // asignar pantalla a tablero
@@ -293,30 +428,16 @@ int main(int n_args, const char *ll_args[])
   inicialitza_joc(joc);
   
   // crear processos
+  if (fork() == 0) mou_usuari(joc);   // proces usuari
 
-  if(fork() == 0) mou_usuari(joc);   // proces usuari
+  for (int i = 0; i < num_oponents; i++)    // processos oponents
+    if(fork() == 0) mou_oponent(i, joc);
+  
 
-  sprintf(a0,"%i",id_estat_joc);
-  sprintf(a2,"%i",id_win);
-  sprintf(a4,"%i",n_col);
-  sprintf(a5,"%i",n_fil);
-  sprintf(a6,"%i",varia);
-  sprintf(a7,"%i",max_retard);
-  sprintf(a8,"%i",min_retard);
-  sprintf(a9,"%i",sem_estat_joc);
-  sprintf(a10,"%i",sem_fitxer);
-  sprintf(a11,"%i",sem_tauler);
-
-  for (int i = 0; i < num_oponents; i++){
-     // processos oponents
-    sprintf(a1,"%i",i);
-    fprintf(f, "tron %d\n", i);
-  	if(fork() == 0) execlp("./oponent3", "oponent3", a0, a1, a2, log_file, a4, a5, a6, a7, a8, a9, a10, a11, (char *)0);
-  }   
+ 
   do			/********** bucle principal del joc **********/
   {
-    usleep(1000); //100 milisegundos
-    win_update();
+    wait(NULL);
   } while (joc->fi_usu==0 && joc->opo_vius>0);
 
   win_fi();
@@ -337,9 +458,8 @@ int main(int n_args, const char *ll_args[])
   elim_mem(id_estat_joc);
   elim_mem(id_win);
   free(p_usu);
-  /*
   for (int i = 0; i < num_oponents; i++) 
     free(p_opo[i]);
- */
+
   return(0);
 }
