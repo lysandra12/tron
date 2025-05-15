@@ -4,11 +4,13 @@
 #include <sys/wait.h>     
 #include <time.h>
 #include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <pthread.h>
+
 #include "winsuport2.h"		
 #include "semafor.h"
 #include "memoria.h"
-#include <sys/time.h>
-#include <unistd.h>
 
 /* definir estructures d'informacio */
 typedef struct {		/* per un tron (usuari o oponent) */
@@ -34,7 +36,3 @@ int dc[] = {0, -1, 0, 1};	/* dalt, esquerra, baix, dreta */
 
 
 void esborrar_posicions(pos p_pos[], int n_pos);
-
-void inicialitza_joc(struct EstatJoc* joc);
-
-void mou_usuari(struct EstatJoc* joc);

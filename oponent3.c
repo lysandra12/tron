@@ -1,4 +1,4 @@
-#include "tron3.h"
+#include "tron.h"
 
 int sem_estat_joc, sem_fitxer, sem_tauler;
 
