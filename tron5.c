@@ -168,7 +168,7 @@ void* mou_usuari(void* arg) {
       int index = (int) c;
       //enviar missatge a thread oponent corresponent
       pthread_mutex_lock(&bustia[index]->mutex);
-      bustia[index]-> chocat = 1;
+      bustia[index-1]->chocat = 1;
       pthread_mutex_unlock(&bustia[index]->mutex);
 
     }else if (c == ' ') {
@@ -264,21 +264,22 @@ int main(int n_args, const char *ll_args[])
   // crear zona mem. compartida 
   int id_estat_joc = ini_mem(sizeof(EstatJoc));
   int id_win = ini_mem(retwin);
-  //int id_bustia_usu = ini_mem(sizeof(Bustia));
   int ids_busties_opo[num_oponents];
   for (int i = 0; i < num_oponents; i++) {
       ids_busties_opo[i] = ini_mem(sizeof(int));
   }
+
   // mapear memoria compartida
   EstatJoc* joc = (EstatJoc*) map_mem(id_estat_joc);
   void *p_win = map_mem(id_win); // puntero m.c. info ventana
-  //Bustia* bustia_usu = map_mem(id_bustia_usu);
-
-  //Bustia* busties_opo[] = (Bustia[]) map_mem(ids_busties_opo);
   Bustia* busties_opo[num_oponents];
   for (int i = 0; i < num_oponents; i++) {
       busties_opo[i] = (Bustia*) map_mem(ids_busties_opo[i]);
+      busties_opo[i]->mutex = PTHREAD_MUTEX_INITIALIZER;
+      pthread_mutex_init(&busties_opo[i]->mutex, NULL); /* inicialitza el semafor */
+
   }
+
   win_set(p_win, n_fil, n_col); // asignar pantalla a tablero
   inicialitza_joc(joc);
   

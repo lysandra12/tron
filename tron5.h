@@ -13,6 +13,7 @@
 #include "semafor.h"
 #include "memoria.h"
 #define MSG_SIZE 20
+pthread_mutex_t mutex= PTHREAD_MUTEX_INITIALIZER;
 
 /* definir estructures d'informacio */
 typedef struct {		/* per un tron (usuari o oponent) */
@@ -37,7 +38,6 @@ typedef struct {
     int chocat;
     //int listo; lo mismo que cond
     pthread_mutex_t mutex;
-    pthread_cond_t cond;
 } Bustia;
 
 typedef struct {
