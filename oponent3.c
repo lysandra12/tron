@@ -36,7 +36,7 @@ int main(int n_args, const char *ll_args[]){
   FILE *f = fopen(log_file, "a");  
 
   // mapejar memoria
-  struct EstatJoc* joc = (struct EstatJoc*) map_mem(id_estat_joc);
+  EstatJoc* joc = (struct EstatJoc*) map_mem(id_estat_joc);
   void *p_win = map_mem(id_win);
 
   // setejar finestra
