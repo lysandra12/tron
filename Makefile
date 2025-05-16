@@ -1,4 +1,4 @@
-all : winsuport.o winsuport2.o memoria.o semafor.o missatge.o tron5
+all : winsuport2.o memoria.o semafor.o missatge.o tron5
 
 winsuport.o : winsuport.c winsuport.h
 	gcc -Wall -c winsuport.c -o winsuport.o
@@ -21,6 +21,9 @@ tron0 : tron0.c winsuport.o winsuport.h
 tron1 : tron1.c winsuport.o winsuport.h
 	gcc -Wall tron1.c winsuport.o -o tron1 -lcurses
 
+tron2 : tron2.c winsuport.o winsuport.h
+	gcc -Wall tron2.c winsuport2.o -o tron2 -lcurses
+
 tron3 : tron3.c oponent3.c tron.h 
 	gcc tron3.c winsuport2.o memoria.o semafor.o -o tron3 -lcurses -lpthread
 	gcc oponent3.c winsuport2.o memoria.o semafor.o -o oponent3 -lcurses
@@ -29,9 +32,9 @@ tron4 : tron4.c oponent3.c tron.h
 	gcc tron4.c winsuport2.o memoria.o semafor.o -o tron4 -lcurses -lpthread
 	gcc oponent3.c winsuport2.o memoria.o semafor.o -o oponent3 -lcurses
 
-tron5 : tron5.c oponent5.c tron5.h 
+tron5 : tron5.c oponent5.c tron.h 
 	gcc tron5.c winsuport2.o memoria.o semafor.o missatge.o -o tron5 -lcurses -lpthread
 	gcc oponent5.c winsuport2.o memoria.o semafor.o missatge.o -o oponent5 -lcurses
 	
 clean: 
-	rm winsuport.o winsuport2.o memoria.o semafor.o missatge.o tron0 tron1 tron3
+	rm winsuport2.o memoria.o semafor.o missatge.o tron5
