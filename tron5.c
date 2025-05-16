@@ -62,10 +62,15 @@ int num_oponents;
 tron usu;   	  /* informacio de l'usuari */
 pos *p_usu;			/* taula de posicions que van recorrent */
 int n_usu = 0;  /* numero d'entrades en les taules de pos. */
+pthread_t thread_usu;
 
-int sem_tauler, sem_fitxer, sem_estat_joc;
+int sem_tauler, sem_fitxer, sem_estat_joc, sem_bustia, id_bustia;
 
 FILE *f;
+
+// comunicació threads
+pid_t tpid[MAX_PROCS]; /* taula d'identificadors dels processos fill */
+int ids_busties[MAX_PROCS];
 
 /* funcio per esborrar totes les posicions anteriors, sigui de l'usuari o */
 /* de l'oponent */
@@ -122,15 +127,15 @@ void inicialitza_joc(EstatJoc* joc)
   win_update();
 }
 
+// funcio per al moviment de l'usuari
 void* mou_usuari(void* arg) {
 
-  info_usuari* info = (info_usuari*) arg;
-  EstatJoc* joc = (EstatJoc*) info->joc;
-  Bustia** bustia = info->bustia;
+  EstatJoc* joc = (EstatJoc*) arg;
   
   int tec;
   tron seg;
-  char c;
+  char c; // char llegit
+  char msg[16];  // msg enviar opo
   int retorn =0;
 
   while (joc->fi_usu==0 && joc->opo_vius>0) {
@@ -164,14 +169,7 @@ void* mou_usuari(void* arg) {
       c = win_quincar(seg.f,seg.c);	/* calcular caracter seguent posicio */
     signalS(sem_tauler);
 
-    if ((c >= '1') && (c <= '0' + num_oponents)){
-      int index = (int) c;
-      //enviar missatge a thread oponent corresponent
-      pthread_mutex_lock(&bustia[index]->mutex);
-      bustia[index-1]->chocat = 1;
-      pthread_mutex_unlock(&bustia[index]->mutex);
-
-    }else if (c == ' ') {
+    if (c == ' ') {
       usu.f = seg.f;
       usu.c = seg.c;
       
@@ -184,30 +182,34 @@ void* mou_usuari(void* arg) {
       p_usu[n_usu].c = usu.c;
       n_usu++;
 
-    }else{ // ha xocat
+    }else  if (c=='+' || c=='0'){ // ha xocat paret/ si mateix
+      
       esborrar_posicions(p_usu, n_usu);
       waitS(sem_estat_joc);
         joc->fi_usu=1;
       signalS(sem_estat_joc);
 
       pthread_exit(0);
+
+    }else if ((atoi(&c) > 0)){ // xocat tron opo
+      
+      sprintf(msg, "%d,%d", seg.f, seg.c);
+      sendM(ids_busties[atoi(&c)-1], msg, sizeof(msg));
+
     }
 
     win_retard(min_retard);
-  }
+  } 
 
   return NULL;
 }
 
 int main(int n_args, const char *ll_args[])
 {
-  int retwin;		/* variables locals */
+  int retwin, n;		/* variables locals */
   const char *log_file;
-  char a0[50], a1[50], a2[50],a4[50],a5[50], a6[50], a7[50], a8[50], a9[50], a10[50], a11[50], a12[50];
+  char opo_args[14][30]; // arguments per pasar a execlp processos oponents
   srand(time(NULL));		/* inicialitza numeros aleatoris */
-
-  pthread_t thread_usu;
-
 
   if ((n_args != 4) && (n_args != 6))
   {	fprintf(stderr,"Comanda: ./tron0 num_oponents variabilitat nom_log [min_retard max_retard] \n");
@@ -264,53 +266,50 @@ int main(int n_args, const char *ll_args[])
   // crear zona mem. compartida 
   int id_estat_joc = ini_mem(sizeof(EstatJoc));
   int id_win = ini_mem(retwin);
-  int ids_busties_opo[num_oponents];
-  for (int i = 0; i < num_oponents; i++) {
-      ids_busties_opo[i] = ini_mem(sizeof(int));
-  }
+  int id_sem_bustia = ini_mem(sizeof(pthread_mutex_t));
 
   // mapear memoria compartida
-  EstatJoc* joc = (EstatJoc*) map_mem(id_estat_joc);
   void *p_win = map_mem(id_win); // puntero m.c. info ventana
-  Bustia* busties_opo[num_oponents];
-  for (int i = 0; i < num_oponents; i++) {
-      busties_opo[i] = (Bustia*) map_mem(ids_busties_opo[i]);
-      busties_opo[i]->mutex = PTHREAD_MUTEX_INITIALIZER;
-      pthread_mutex_init(&busties_opo[i]->mutex, NULL); /* inicialitza el semafor */
-
-  }
+  EstatJoc *joc = (EstatJoc*) map_mem(id_estat_joc);
 
   win_set(p_win, n_fil, n_col); // asignar pantalla a tablero
   inicialitza_joc(joc);
   
-  //info thread usuari
-  info_usuari* info = malloc(sizeof(info_usuari) + num_oponents * sizeof(Bustia*));
-  info->joc = joc;
-  for (int i = 0; i < num_oponents; i++) {
-      info->bustia[i] = busties_opo[i];
-  }
   // thread usuari
-  if (pthread_create(&thread_usu, NULL, mou_usuari, (void*)info) != 0) {
+  if (pthread_create(&thread_usu, NULL, mou_usuari, (void*) joc) != 0) {
   fprintf(stderr, "Error creant el thread del jugador\n");
   exit(1);
   }   
 
-  sprintf(a0,"%i",id_estat_joc);
-  sprintf(a2,"%i",id_win);
-  sprintf(a4,"%i",n_col);
-  sprintf(a5,"%i",n_fil);
-  sprintf(a6,"%i",varia);
-  sprintf(a7,"%i",max_retard);
-  sprintf(a8,"%i",min_retard);
-  sprintf(a9,"%i",sem_estat_joc);
-  sprintf(a10,"%i",sem_fitxer);
-  sprintf(a11,"%i",sem_tauler);
+  sprintf(opo_args[0], "%i", id_estat_joc);
+  sprintf(opo_args[2], "%i", id_win);
+  sprintf(opo_args[4], "%i", n_col);
+  sprintf(opo_args[5], "%i", n_fil);
+  sprintf(opo_args[6], "%i", varia);
+  sprintf(opo_args[7], "%i", max_retard);
+  sprintf(opo_args[8], "%i", min_retard);
+  sprintf(opo_args[9], "%i", sem_estat_joc);
+  sprintf(opo_args[10], "%i", sem_fitxer);
+  sprintf(opo_args[11], "%i", sem_tauler);
+  sprintf(opo_args[13], "%i", id_sem_bustia);
 
   // processos oponents
   for (int i = 0; i < num_oponents; i++){
-    sprintf(a1,"%i",i);
-    sprintf(a12,"%i",ids_busties_opo[i]);
-  	if(fork() == 0) execlp("./oponent3", "oponent3", a0, a1, a2, log_file, a4, a5, a6, a7, a8, a9, a10, a11, a12, (char *)0);
+    
+    sprintf(opo_args[1],"%i",i);
+    
+    id_bustia = ini_mis();
+    ids_busties[i] = id_bustia;
+    sprintf(opo_args[12], "%i", id_bustia);
+    
+    tpid[n] = fork();
+  	if(tpid[n] == (pid_t) 0) {  // fill
+      execlp("./oponent5", "oponent5",
+               opo_args[0], opo_args[1], opo_args[2], log_file,
+               opo_args[4], opo_args[5], opo_args[6], opo_args[7], opo_args[8],
+               opo_args[9], opo_args[10], opo_args[11], opo_args[12],
+               opo_args[13], (char *)0);
+    } else if (tpid[n] > 0) n++; // pare
   }   
 
   // cronometre
@@ -318,8 +317,8 @@ int main(int n_args, const char *ll_args[])
   gettimeofday(&inici, NULL); // temps actual
   int s, ms, min, resta_s;
 
-/********** bucle principal del joc **********/
-while (joc->fi_usu==0 && joc->opo_vius>0) {
+  /********** bucle principal del joc **********/
+  while (joc->fi_usu==0 && joc->opo_vius>0) {
     
     gettimeofday(&actual, NULL); // actualitzar tems actual
     s = (actual.tv_sec - inici.tv_sec);
@@ -347,20 +346,24 @@ while (joc->fi_usu==0 && joc->opo_vius>0) {
   win_fi();
 
   // esperar finalizacion procesos
-  for (int i = 0; i < num_oponents; i++) wait(NULL);
+  for (int i = 0; i < num_oponents; i++) waitpid(tpid[i],NULL,0);
 
   // RESULTATS
   if (joc->fi_usu==-1) printf("S'ha aturat el joc amb tecla RETURN!\n");
   else { printf("Ha guanyat %s !!\n", !joc->fi_usu ? "l'usuari":"l'ordinador"); }
   printf( "Temps emprat: %02d:%02d\n\n", min, resta_s);
 
-  // eliminar semafors i memoria
+  // eliminar semafors, memoria i busties
   elim_sem(sem_fitxer);
   elim_sem(sem_tauler);
   elim_sem(sem_estat_joc);
   
   elim_mem(id_estat_joc);
   elim_mem(id_win);
+  
+  for (int i=0; i<num_oponents; i++)
+    elim_mis(ids_busties[i]);
+  
   free(p_usu);
 
   return(0);

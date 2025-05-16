@@ -12,8 +12,11 @@
 #include "winsuport2.h"		
 #include "semafor.h"
 #include "memoria.h"
+#include "missatge.h"
+
 #define MSG_SIZE 20
-pthread_mutex_t mutex= PTHREAD_MUTEX_INITIALIZER;
+#define MAX_PROCS 10
+
 
 /* definir estructures d'informacio */
 typedef struct {		/* per un tron (usuari o oponent) */
@@ -33,20 +36,16 @@ typedef struct {
     int opo_vius; // num oponents vius
 }EstatJoc;
 
-// busties
-typedef struct {
-    int chocat;
-    //int listo; lo mismo que cond
-    pthread_mutex_t mutex;
-} Bustia;
-
-typedef struct {
-	EstatJoc* joc;	
-    Bustia* bustia[];
-}info_usuari;
-
+typedef struct { // seguir rastre
+    int index;
+    int dir;
+} rastre_args;
 
 int df[] = {-1, 0, 1, 0};	/* moviments de les 4 direccions possibles */
 int dc[] = {0, -1, 0, 1};	/* dalt, esquerra, baix, dreta */
 
-void esborrar_posicions(pos p_pos[], int n_pos);
+void esborrar_posicions(pos p_pos[], int n_pos); // esborrar un tron
+
+int buscar_pos(pos *array, int n, int f, int c); // buscar index posició especifica
+
+void *seguir_rastre(void *arg); // seguir el rastre de un tron
