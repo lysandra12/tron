@@ -49,7 +49,7 @@
 /*	3  ==>  no hi ha prou memoria per crear les estructures dinamiques   */
 /*									     */
 /*****************************************************************************/
-#include "tron5.h"
+#include "tron.h"
 
 /* variables globals */
 

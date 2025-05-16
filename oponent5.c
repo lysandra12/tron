@@ -1,4 +1,4 @@
-#include "tron5.h"
+#include "tron.h"
 
 int sem_estat_joc, sem_fitxer, sem_tauler;
 pthread_mutex_t mutex= PTHREAD_MUTEX_INITIALIZER;
@@ -70,6 +70,11 @@ void esborrar_posicions(pos p_pos[], int n_pos)
       win_escricar(p_pos[i].f,p_pos[i].c,' ',NO_INV);
       win_update();
     signalS(sem_tauler);
+
+    pthread_mutex_lock(&mutex);
+      n_opo--;
+    pthread_mutex_unlock(&mutex);
+
     win_retard(10);		/* un petit retard per simular el joc real */
   }
 }
@@ -261,7 +266,6 @@ void *seguir_rastre(void *arg){
   
   pos actual;
   int fi=0, i=0, total;
-
 
   for (int i = 0; !fi; i++) {
       pthread_mutex_lock(&mutex);
